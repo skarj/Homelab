@@ -34,7 +34,9 @@ spec:
           httproute:
             enabled: true
             parentRefs:
-              - name: cilium
+              - group: gateway.networking.k8s.io
+                kind: Gateway
+                name: cilium
                 namespace: default
             hostnames:
               - "argocd.cluster.home"
