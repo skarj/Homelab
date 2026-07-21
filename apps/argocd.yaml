@@ -31,6 +31,19 @@ spec:
               cpu: 100m
               memory: 128Mi
 
+          httproute:
+            enabled: true
+            parentRefs:
+              - name: cilium
+                namespace: default
+            hostnames:
+              - "argocd.cluster.home"
+            rules:
+              - matches:
+                  - path:
+                      type: PathPrefix
+                      value: /
+
         repoServer:
           replicas: 1
           resources:
@@ -66,16 +79,6 @@ spec:
           params:
             server.insecure: "true"
 
-        imageUpdater:
-          enabled: true
-          replicas: 1
-          resources:
-            limits:
-              cpu: 100m
-              memory: 128Mi
-            requests:
-              cpu: 10m
-              memory: 32Mi
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
