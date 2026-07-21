@@ -246,6 +246,7 @@
           register: app_result
           changed_when:
             - "'created' in app_result.stdout or 'configured' in app_result.stdout"
+          run_once: true
 
     # Control plane node uses custom kernel with iSCSI support
     - name: Configure custom kernel with iSCSI support
