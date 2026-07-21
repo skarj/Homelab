@@ -1,6 +1,0 @@
----
-roles:
-  - src: geerlingguy.containerd
-
-collections:
-  - name: community.general
