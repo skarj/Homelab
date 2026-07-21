@@ -1,0 +1,267 @@
+# Note: execution order
+# 1. pre_tasks
+# 2. roles
+# 3. tasks
+
+##########################
+## All Kuberentes nodes ##
+##########################
+- name: Set up cluster-wide configuration.
+  hosts: all
+  gather_facts: true
+  become: true
+
+  handlers:
+    - name: reboot-pi
+      ansible.builtin.reboot:
+
+  vars:
+    swap_file_path: /var/swap
+    swap_file_state: absent
+    kubernetes_allow_pods_on_control_plane: true
+    kubernetes_kubeadm_init_extra_opts: --skip-phases=addon/kube-proxy
+
+  pre_tasks:
+    - name: Configure Raspberry Pi hardware
+      block:
+        - name: Enable maximum USB current
+          community.general.ini_file:
+            path: /boot/firmware/config.txt
+            section: all
+            option: usb_max_current_enable
+            value: "1"
+            no_extra_spaces: true
+
+        - name: Disable WiFi
+          community.general.ini_file:
+            path: /boot/firmware/config.txt
+            section: all
+            option: dtoverlay
+            value: disable-wifi
+            no_extra_spaces: true
+
+    - name: Enable cgroups for memory management
+      block:
+        - name: Read the current cmdline.txt
+          ansible.builtin.slurp:
+            src: /boot/firmware/cmdline.txt
+          register: cmdline_file
+
+        - name: Ensure cgroups are configured correctly in cmdline.txt
+          ansible.builtin.copy:
+            dest: /boot/firmware/cmdline.txt
+            owner: root
+            group: root
+            backup: yes
+            content: |
+              {%- set args = (cmdline_file['content'] | b64decode | trim).split(' ') | select | list -%}
+              {%- set args = args + ['cgroup_memory=1'] if 'cgroup_memory=1' not in args else args -%}
+              {%- set args = args + ['cgroup_enable=memory'] if 'cgroup_enable=memory' not in args else args -%}
+              {{ args | join(' ') }}
+          notify: reboot-pi
+      when: ansible_facts["distribution"] == 'Debian'
+
+    - name: Disable swap
+      block:
+        - name: Disable and stop dphys-swapfile
+          systemd:
+            name: dphys-swapfile
+            state: stopped
+            enabled: no
+            masked: yes
+
+        - name: Disable swap immediately (live)
+          command: swapoff -a
+          when: ansible_facts["swaptotal_mb"] > 0
+
+        - name: Remove the physical swap file
+          file:
+            path: /var/swap
+            state: absent
+
+    - name: Install required dependencies
+      ansible.builtin.apt:
+        name: nfs-common
+        state: present
+        update_cache: yes
+
+    - name: Ensure IP forwarding is enabled in the kernel
+      ansible.posix.sysctl:
+        name: net.ipv4.ip_forward
+        value: '1'
+        sysctl_set: yes
+        state: present
+        reload: yes
+
+    - name: Clean up one-time Raspberry Pi boot services
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        enabled: false
+        state: stopped
+      loop:
+        - resize2fs_once.service
+        - sshswitch.service
+      ignore_errors: true
+
+  roles:
+    - containerd
+    - kubernetes
+
+  tasks:
+    - name: Pin Kubernetes packages
+      ansible.builtin.dpkg_selections:
+        name: "{{ item }}"
+        selection: hold
+      loop:
+        - kubelet
+        - kubeadm
+        - kubectl
+
+
+#############################
+## Kuberentes workers only ##
+#############################
+- name: Set up workers configuration
+  hosts: workers
+  gather_facts: true
+  become: true
+
+  handlers:
+    - name: reboot-pi
+      ansible.builtin.reboot:
+
+  pre_tasks:
+    - name: Configure Netconsole on Diskless Node
+      block:
+        - name: Read the current cmdline.txt
+          ansible.builtin.slurp:
+            src: /boot/firmware/cmdline.txt
+          register: cmdline_file
+
+        - name: Ensure netconsole parameter is set correctly
+          ansible.builtin.copy:
+            dest: /boot/firmware/cmdline.txt
+            owner: root
+            group: root
+            backup: yes
+            content: |
+              {%- set args = (cmdline_file['content'] | b64decode | trim).split(' ') | select | list -%}
+              {%- set target_nc = 'netconsole=6665@/eth0,6666@192.168.50.1/2c:cf:67:ab:1d:74' -%}
+              {%- if target_nc not in args -%}
+                {%- set args = args | reject('match', '^netconsole=') | list + [target_nc] -%}
+              {%- endif -%}
+              {%- set target_panic = 'panic=20' -%}
+              {%- if target_panic not in args -%}
+                {%- set args = args | reject('match', '^panic=') | list + [target_panic] -%}
+              {%- endif -%}
+              {{ args | join(' ') }}
+          notify: reboot-pi
+
+
+#######################
+## Kuberentes master ##
+#######################
+- name: Set up Kubernetes Control Plane
+  hosts: master
+  gather_facts: true
+  become: true
+
+  roles:
+    - netconsole
+
+  tasks:
+    - name: Install Kubernetes Gateway API CRDs
+      command: "kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/standard-install.yaml"
+      register: crd_result
+      changed_when: "'created' in crd_result.stdout"
+      until: crd_result is not failed
+      retries: 12
+      delay: 5
+
+    - name: Install Helm
+      block:
+      - name: Determine Architecture Map
+        set_fact:
+          helm_arch: "{{ 'arm64' if ansible_facts['architecture'] == 'aarch64' else 'amd64' }}"
+
+      - name: Download Helm binary
+        ansible.builtin.unarchive:
+          src: "https://get.helm.sh/helm-v3.20.1-linux-{{ helm_arch }}.tar.gz"
+          dest: /opt
+          remote_src: yes
+          creates: "/opt/linux-{{ helm_arch }}/helm"
+
+      - name: Install Helm to bin
+        ansible.builtin.copy:
+          src: "/opt/linux-{{ helm_arch }}/helm"
+          dest: "/usr/local/bin/helm"
+          mode: '0755'
+          remote_src: yes
+
+      - name: Install helm-diff plugin
+        kubernetes.core.helm_plugin:
+          plugin_path: https://github.com/databus23/helm-diff
+          state: present
+
+    - name: Install Cilium
+      block:
+        - name: Add Cilium Helm repo
+          kubernetes.core.helm_repository:
+            name: cilium
+            repo_url: "https://helm.cilium.io/"
+
+        - name: Deploy Cilium via Helm
+          kubernetes.core.helm:
+            name: cilium
+            chart_ref: cilium/cilium
+            chart_version: 1.19.1
+            release_namespace: kube-system
+            values: "{{ lookup('file', playbook_dir + '/cilium/helm-values.yaml') | from_yaml }}"
+
+    - name: Install ArgoCD
+      block:
+        - name: Create argocd namespace
+          ansible.builtin.shell: "kubectl create ns argocd --dry-run=client -o yaml | kubectl apply -f -"
+          register: ns_result
+          changed_when: "'created' in ns_result.stdout"
+
+        - name: Add the ArgoCD Helm repository
+          kubernetes.core.helm_repository:
+            name: argo
+            repo_url: "https://argoproj.github.io/argo-helm"
+
+        - name: Deploy ArgoCD using external values file
+          kubernetes.core.helm:
+            name: argocd
+            chart_ref: argo/argo-cd
+            release_namespace: argocd
+            chart_version: "10.1.4"
+            wait: true
+            values: "{{ lookup('file', playbook_dir + '/argocd/helm-values.yaml') | from_yaml }}"
+
+        - name: Create ArgoCD root application
+          ansible.builtin.shell: "kubectl apply -f -"
+          args:
+            stdin: "{{ lookup('ansible.builtin.file', 'argocd/root-application.yaml') }}"
+          register: app_result
+          changed_when:
+            - "'created' in app_result.stdout or 'configured' in app_result.stdout"
+
+    # Control plane node uses custom kernel with iSCSI support
+    - name: Configure custom kernel with iSCSI support
+      block:
+        - name: Pin Linux Kernel version
+          ansible.builtin.dpkg_selections:
+            name: "{{ item }}"
+            selection: hold
+          loop:
+            - linux-image-rpi-2712
+
+        - name: Set custom kernel
+          community.general.ini_file:
+            path: /boot/firmware/config.txt
+            section: all
+            option: kernel
+            value: kernel_2712_6_18.img
+            # value: kernel_2712.img # Original kernel
+            no_extra_spaces: true

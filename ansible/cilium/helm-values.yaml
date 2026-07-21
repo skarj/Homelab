@@ -1,0 +1,43 @@
+# --- Core Networking (Native Mode) ---
+routingMode: native
+ipv4NativeRoutingCIDR: "10.244.0.0/16" # MUST match kubeadm pod-network-cidr
+autoDirectNodeRoutes: true
+directRoutingDevice: "eth1" # USB Adapter
+devices:
+  - eth0
+  - eth1
+
+# --- Kube-Proxy Replacement ---
+kubeProxyReplacement: "true"
+k8sServiceHost: "192.168.1.100" # "{{ ansible_facts['default_ipv4']['address'] }}"
+k8sServicePort: 6443
+
+# --- L2 & Gateway API ---
+l2announcements:
+  enabled: true
+l2NeighDiscovery:
+  enabled: true
+gatewayAPI:
+  enabled: true
+externalIPs:
+  enabled: true
+
+# --- Cluster Config ---
+k8s:
+  requireIPv4PodCIDR: true
+ipam:
+  mode: kubernetes
+operator:
+  replicas: 1
+
+# --- Observability ---
+hubble:
+  enabled: true
+  relay:
+    enabled: true
+  ui:
+    enabled: true
+  tls:
+    auto:
+      # Change this from the default "helm" to "cronJob"
+      method: "cronJob"

@@ -1,0 +1,60 @@
+- name: Ensure rsyslog is installed
+  ansible.builtin.apt:
+    name: rsyslog
+    state: present
+
+- name: Ensure dedicated netconsole log directory exists
+  ansible.builtin.file:
+    path: /var/log/netconsole
+    state: directory
+    owner: root
+    group: adm
+    mode: '0755'
+
+- name: Deploy rsyslog configuration for netconsole
+  ansible.builtin.copy:
+    dest: /etc/rsyslog.d/netconsole.conf
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      # Load the UDP input module
+      module(load="imudp")
+
+      # Define a template to dynamically name files based on the sender's IP
+      template(name="NetconsoleByIP" type="string" string="/var/log/netconsole/netconsole-%FROMHOST-IP%.log")
+
+      # Bind port 6666 to the netconsole ruleset
+      input(type="imudp" port="6666" ruleset="netconsole_logs")
+
+      # Apply the ruleset to route the incoming logs to the dynamic file
+      ruleset(name="netconsole_logs") {
+          action(type="omfile" dynaFile="NetconsoleByIP")
+      }
+  register: rsyslog_config
+
+- name: Restart rsyslog service to apply changes
+  ansible.builtin.systemd:
+    name: rsyslog
+    enabled: yes
+    state: restarted
+  when: rsyslog_config.changed
+
+- name: Configure logrotate for dynamic netconsole logs
+  ansible.builtin.copy:
+    dest: /etc/logrotate.d/netconsole
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      /var/log/netconsole/*.log {
+          weekly
+          rotate 4
+          compress
+          missingok
+          notifempty
+          sharedscripts
+          postrotate
+              /usr/lib/rsyslog/rsyslog-rotate
+          endscript
+      }
