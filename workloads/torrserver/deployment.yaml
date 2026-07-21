@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: torrserver
+  namespace: torrserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: torrserver
+  template:
+    metadata:
+      labels:
+        app: torrserver
+    spec:
+      containers:
+      - name: torrserver
+        image: ghcr.io/yourok/torrserver:MatriX.136
+        ports:
+        - containerPort: 8090
+        volumeMounts:
+        - name: torrserver-storage
+          mountPath: /torrserver/db
+      volumes:
+      - name: torrserver-storage
+        persistentVolumeClaim:
+          claimName: torrserver-pvc
