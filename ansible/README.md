@@ -20,8 +20,9 @@ Since this is directly reflected in the TFTP directory via NFS, the Pi automatic
 
 ## Running Ansible
 ```
-ansible-playbook playbook.yml --limit workers --diff --check
+ansible-playbook playbook.yml --diff
 ansible-playbook playbook.yml --limit master --diff --check
+ansible-playbook playbook.yml --limit workers --diff --check
 ```
 
 ## iSCSI (TODO validate)
