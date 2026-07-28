@@ -215,7 +215,8 @@
           kubernetes.core.helm:
             name: cilium
             chart_ref: cilium/cilium
-            chart_version: 1.19.1
+            chart_version: 1.19.6
+            update_repo_cache: true
             release_namespace: kube-system
             values: "{{ lookup('file', playbook_dir + '/cilium/helm-values.yaml') | from_yaml }}"
 
