@@ -1,0 +1,71 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: freshrss
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: 'https://bjw-s-labs.github.io/helm-charts/'
+    chart: app-template
+    targetRevision: 5.0.1
+    helm:
+      valuesObject:
+        controllers:
+          freshrss:
+            containers:
+              main:
+                image:
+                  repository: ghcr.io/linuxserver/freshrss
+                  tag: 1.29.1-ls317
+                env:
+                  TZ: "Europe/Minsk"
+                  CRON_MIN: "1,31"
+
+        service:
+          main:
+            controller: freshrss
+            ports:
+              http:
+                port: 80
+
+        # Gateway API HTTPRoute configuration
+        route:
+          main:
+            enabled: true
+            kind: HTTPRoute
+            parentRefs:
+              - name: cilium
+                namespace: default
+            hostnames:
+              - freshrss.cluster.home
+            rules:
+              - matches:
+                  - path:
+                      type: PathPrefix
+                      value: /
+                backendRefs:
+                  - name: main
+                    port: 80
+
+        persistence:
+          config:
+            enabled: true
+            storageClass: "nfs-client"
+            size: 2Gi
+            globalMounts:
+              - path: /config
+
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: freshrss
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
