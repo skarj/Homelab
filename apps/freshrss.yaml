@@ -9,7 +9,7 @@ spec:
   project: default
   source:
     repoURL: 'https://bjw-s-labs.github.io/helm-charts/'
-    chart: app-template
+    chart: app-template # universal helm template for apps
     targetRevision: 5.0.1
     helm:
       valuesObject:
