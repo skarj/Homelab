@@ -47,7 +47,7 @@ spec:
                       type: PathPrefix
                       value: /
                 backendRefs:
-                  - name: main
+                  - name: freshrss
                     port: 80
 
         persistence:
