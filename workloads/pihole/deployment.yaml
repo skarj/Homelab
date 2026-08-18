@@ -45,6 +45,9 @@ spec:
               mountPath: /etc/pihole
             - name: pihole-dnsmasq
               mountPath: /etc/dnsmasq.d
+            - name: custom-dns
+              mountPath: /etc/dnsmasq.d/02-custom-dns.conf
+              subPath: 02-custom-dns.conf
       volumes:
         - name: pihole-etc
           persistentVolumeClaim:
@@ -52,3 +55,6 @@ spec:
         - name: pihole-dnsmasq
           persistentVolumeClaim:
             claimName: pihole-dnsmasq-pvc
+        - name: custom-dns
+          configMap:
+            name: pihole-custom-dns
