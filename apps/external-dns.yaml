@@ -13,7 +13,7 @@ spec:
     path: workloads/external-dms
   destination:
     server: https://kubernetes.default.svc
-    namespace: external-dms
+    namespace: external-dns
   syncPolicy:
     automated:
       prune: true
