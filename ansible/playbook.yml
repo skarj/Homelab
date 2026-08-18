@@ -172,7 +172,7 @@
 
   tasks:
     - name: Install Kubernetes Gateway API CRDs
-      command: "kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/standard-install.yaml"
+      command: "kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.6.1/standard-install.yaml"
       register: crd_result
       changed_when: "'created' in crd_result.stdout"
       until: crd_result is not failed
