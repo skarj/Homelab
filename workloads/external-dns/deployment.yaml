@@ -20,6 +20,7 @@ spec:
           image: registry.k8s.io/external-dns/external-dns:v0.21.0
           args:
             - --provider=pihole
+            - --pihole-api-version=6
             - --pihole-server=http://pihole-web.pihole.svc.cluster.local:80
             - --source=gateway-httproute
             - --registry=noop
