@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://github.com/skarj/Homelab.git
     targetRevision: HEAD
-    path: workloads/external-dms
+    path: workloads/external-dns
   destination:
     server: https://kubernetes.default.svc
     namespace: external-dns
