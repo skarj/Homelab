@@ -39,6 +39,7 @@ spec:
             parentRefs:
               - name: cilium
                 namespace: default
+                sectionName: http
             hostnames:
               - freshrss.cluster.home
             rules:

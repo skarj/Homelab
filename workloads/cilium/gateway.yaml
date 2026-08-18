@@ -12,3 +12,15 @@ spec:
     allowedRoutes:
       namespaces:
         from: All
+  - name: dns-udp
+    protocol: UDP
+    port: 53
+    allowedRoutes:
+      kinds:
+        - kind: UDPRoute
+  - name: dns-tcp
+    protocol: TCP
+    port: 53
+    allowedRoutes:
+      kinds:
+        - kind: TCPRoute

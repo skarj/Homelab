@@ -7,6 +7,7 @@ spec:
   parentRefs:
   - name: cilium
     namespace: default
+    sectionName: http
   hostnames:
   - "torrserver.cluster.home"
   rules:

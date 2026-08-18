@@ -36,6 +36,7 @@ spec:
             parentRefs:
               - name: cilium
                 namespace: default
+                sectionName: http
             hostnames:
               - "argocd.cluster.home"
             rules:
