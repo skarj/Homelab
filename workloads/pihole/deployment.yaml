@@ -23,6 +23,8 @@ spec:
           env:
             - name: TZ
               value: "UTC"
+            - name: FTLCONF_dns_listeningMode
+              value: "all"
             - name: FTLCONF_webserver_api_password
               valueFrom:
                 secretKeyRef:
