@@ -16,7 +16,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: pihole-dns
+  name: pihole-dns-lb
   namespace: pihole
   annotations:
     io.cilium/lb-ipam-ips: "192.168.1.101"
