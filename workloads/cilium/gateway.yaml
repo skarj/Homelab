@@ -17,7 +17,7 @@ spec:
     port: 53
     allowedRoutes:
       namespaces:
-        from: pihole
+        from: All # todo pihole
       kinds:
         - kind: UDPRoute
   - name: dns-tcp
@@ -25,6 +25,6 @@ spec:
     port: 53
     allowedRoutes:
       namespaces:
-        from: pihole
+        from: All # todo pihole
       kinds:
         - kind: TCPRoute
