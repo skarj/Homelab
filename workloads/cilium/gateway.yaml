@@ -16,11 +16,15 @@ spec:
     protocol: UDP
     port: 53
     allowedRoutes:
+      namespaces:
+        from: pihole
       kinds:
         - kind: UDPRoute
   - name: dns-tcp
     protocol: TCP
     port: 53
     allowedRoutes:
+      namespaces:
+        from: pihole
       kinds:
         - kind: TCPRoute
