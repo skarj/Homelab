@@ -5,7 +5,8 @@ metadata:
   namespace: default
 spec:
   blocks:
-  - cidr: "192.168.1.101/32" # 101-101 range
+    - start: "192.168.1.101"
+      stop: "192.168.1.102"
 ---
 apiVersion: cilium.io/v2alpha1
 kind: CiliumL2AnnouncementPolicy
