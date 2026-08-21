@@ -4,8 +4,9 @@ metadata:
   name: cilium
   namespace: default
   annotations:
-    io.cilium/lb-ipam-ips: "192.168.1.101"
-    lbipam.cilium.io/sharing-key: "home-lan-shared"
+    io.cilium/lb-ipam-ips: "192.168.1.101" # Assigns a specific IP address to the LoadBalancer service
+    lbipam.cilium.io/sharing-key: "home-lan-shared" # Allows sharing with other services using the same sharing key
+    lbipam.cilium.io/sharing-cross-namespace: "*" # Allows sharing with all namespaces
 spec:
   gatewayClassName: cilium
   listeners:
