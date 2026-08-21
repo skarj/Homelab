@@ -4,8 +4,8 @@ metadata:
   name: cilium
   namespace: default
   annotations:
-      io.cilium/lb-ipam-ips: "192.168.1.101"
-      lbipam.cilium.io/sharing-key: "home-lan-shared"
+    io.cilium/lb-ipam-ips: "192.168.1.101"
+    lbipam.cilium.io/sharing-key: "home-lan-shared"
 spec:
   gatewayClassName: cilium
   listeners:
