@@ -1,0 +1,29 @@
+---
+- name: Map architecture for Raspberry Pi
+  ansible.builtin.set_fact:
+    crictl_arch: "{{ 'arm64' if ansible_facts['architecture'] == 'aarch64' else ('arm' if 'armv' in ansible_facts['architecture'] else 'amd64') }}"
+    crictl_version: "v1.36.0"
+    crictl_bin_dir: "/usr/local/bin"
+
+- name: Download and install crictl binary
+  ansible.builtin.unarchive:
+    src: "https://github.com/kubernetes-sigs/cri-tools/releases/download/{{ crictl_version }}/crictl-{{ crictl_version }}-linux-{{ crictl_arch }}.tar.gz"
+    dest: "{{ crictl_bin_dir }}"
+    remote_src: true
+    mode: '0755'
+    owner: root
+    group: root
+  become: true
+
+- name: Configure crictl default endpoint
+  ansible.builtin.copy:
+    dest: /etc/crictl.yaml
+    content: |
+      runtime-endpoint: unix:///run/containerd/containerd.sock
+      image-endpoint: unix:///run/containerd/containerd.sock
+      timeout: 10
+      debug: false
+    mode: '0644'
+    owner: root
+    group: root
+  become: true

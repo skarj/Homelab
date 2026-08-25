@@ -106,6 +106,7 @@
 
   roles:
     - containerd
+    - crictl
     - kubernetes
 
   tasks:
@@ -215,7 +216,7 @@
           kubernetes.core.helm:
             name: cilium
             chart_ref: cilium/cilium
-            chart_version: 1.19.6
+            chart_version: 1.20.1
             update_repo_cache: true
             release_namespace: kube-system
             values: "{{ lookup('file', playbook_dir + '/cilium/helm-values.yaml') | from_yaml }}"
