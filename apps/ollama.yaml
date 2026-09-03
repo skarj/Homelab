@@ -1,16 +1,16 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: sre-agent-test
+  name: ollama
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
-    repoURL: https://github.com/skarj/ai-agents.git
-    targetRevision: main
-    path: agentic-sre/k8s
+    repoURL: https://github.com/skarj/Homelab.git
+    targetRevision: HEAD
+    path: workloads/ollama
   destination:
     server: https://kubernetes.default.svc
     namespace: ai-agents
