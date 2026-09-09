@@ -16,4 +16,4 @@ spec:
             value: /
       backendRefs:
         - name: signoz
-          port: 8000
+          port: 8080
