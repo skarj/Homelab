@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: pihole-web
+  name: pihole
   namespace: pihole
 spec:
   type: ClusterIP
@@ -10,27 +10,13 @@ spec:
   ports:
     - name: http
       port: 80
-      targetPort: 80
+      targetPort: http
       protocol: TCP
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: pihole-dns-lb
-  namespace: pihole
-  annotations:
-    io.cilium/lb-ipam-ips: "192.168.1.102"
-spec:
-  type: LoadBalancer
-  externalTrafficPolicy: Cluster
-  selector:
-    app.kubernetes.io/name: pihole
-  ports:
     - name: dns-tcp
       port: 53
-      targetPort: 53
+      targetPort: dns-tcp
       protocol: TCP
     - name: dns-udp
       port: 53
-      targetPort: 53
+      targetPort: dns-udp
       protocol: UDP
