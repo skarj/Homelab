@@ -20,7 +20,7 @@
     swap_file_state: absent
     kubernetes_allow_pods_on_control_plane: true
     kubernetes_kubeadm_init_extra_opts: --skip-phases=addon/kube-proxy
-    kubernetes_version: 1.36
+    kubernetes_version: 1.37
 
   pre_tasks:
     - name: Configure Raspberry Pi hardware
@@ -211,12 +211,13 @@
           kubernetes.core.helm_repository:
             name: cilium
             repo_url: "https://helm.cilium.io/"
+            force_update: true
 
         - name: Deploy Cilium via Helm
           kubernetes.core.helm:
             name: cilium
             chart_ref: cilium/cilium
-            chart_version: 1.20.1
+            chart_version: 1.20.1 # Pin to 1.20.1 until a patch release addresses the BTF probing behavior on non-BTF kernels.
             update_repo_cache: true
             release_namespace: kube-system
             values: "{{ lookup('file', playbook_dir + '/cilium/helm-values.yaml') | from_yaml }}"
@@ -238,7 +239,7 @@
             name: argocd
             chart_ref: argo/argo-cd
             release_namespace: argocd
-            chart_version: "10.1.4"
+            chart_version: "10.9.2"
             wait: true
             values: "{{ lookup('file', playbook_dir + '/argocd/helm-values.yaml') | from_yaml }}"
 
