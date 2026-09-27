@@ -21,7 +21,7 @@ spec:
           args:
             - --provider=pihole
             - --pihole-api-version=6
-            - --pihole-server=http://pihole-web.pihole.svc.cluster.local:80
+            - --pihole-server=http://pihole.pihole.svc.cluster.local:80
             - --source=gateway-httproute
             - --registry=noop
             - --policy=upsert-only
