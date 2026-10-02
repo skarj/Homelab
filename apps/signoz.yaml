@@ -36,8 +36,10 @@ spec:
                 cpu: 1500m
                 memory: 4Gi
             persistence:
-              storageClass: nfs-client
+              storageClass: local-path
               size: 5Gi
+            nodeSelector:
+              disktype: ssd
           signoz:
             replicaCount: 1
             resources:
