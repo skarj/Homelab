@@ -9,7 +9,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/skarj/Homelab.git
-    targetRevision: main
+    targetRevision: HEAD
     path: workloads/cilium
   destination:
     server: https://kubernetes.default.svc
